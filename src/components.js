@@ -9,7 +9,7 @@ Crafty.c('Actor', {
   }
 });
 
-Crafty.load(['assets/player.png', 'assets/Background/starBig.png', 'assets/Background/starSmall.png', 'assets/meteorBig.png', 'assets/meteorSmall.png', 'assets/laserRed.png', 'assets/laserRedShot.png'], function () {
+Crafty.load(['assets/player.png', 'assets/Background/starBig.png', 'assets/Background/starSmall.png', 'assets/meteorBig.png', 'assets/meteorSmall.png', 'assets/laserRed.png', 'assets/laserRedShot.png', 'assets/Sounds/laser1.mp3', 'assets/Sounds/laser1.wav', 'assets/Sounds/laser1.ogg', 'assets/sounds/explode1.wav',	'assets/sounds/explode1.mp3', 'assets/sounds/explode1.ogg', "assets/music/through-space.mp3", "assets/music/through-space.ogg"], function () {
 	Crafty.sprite(99, 75, 'assets/player.png', { spr_ship: [0, 0] });
 	Crafty.sprite(23, 21, 'assets/Background/starBig.png', { spr_bigstar: [0,0]});
 	Crafty.sprite(11, 'assets/Background/starSmall.png', { spr_smallstar: [0, 0] });
@@ -19,14 +19,26 @@ Crafty.load(['assets/player.png', 'assets/Background/starBig.png', 'assets/Backg
 	Crafty.sprite(56, 54, 'assets/laserRedShot.png', { spr_redshot: [0, 0] });
 });
 
+Crafty.audio.add({
+	shoot: ["assets/sounds/laser1.wav",
+			"assets/sounds/laser1.mp3",
+			"assets/sounds/laser1.ogg"],
+	explosion: ["assets/sounds/explode1.wav",
+			"assets/sounds/explode1.mp3",
+			"assets/sounds/explode1.ogg"],
+	space: [
+		"assets/music/through-space.mp3",
+		"assets/music/through-space.ogg"]
+});
+
 Crafty.c('Meteor', {
 	speed: 3,
-	health: 3,
+	health: 5,
 	xSpeed: 0,
 	ySpeed: 0,
 	init: function() {
 		rotation = Crafty.math.randomInt(0, 5);
-		this.requires('Actor, Collision');
+		this.requires('Actor');
 		this.attr({ x: Crafty.math.randomInt(10, Game.width - 10), y: Crafty.math.randomInt(-50, -800) });
 		this.bind('EnterFrame', function () {
 			this.origin('center');
@@ -42,9 +54,10 @@ Crafty.c('Meteor', {
 		this.attr({ x: Crafty.math.randomInt(10, Game.width - 10), y: -10 });
 	},
 	gotHit: function () {
-		this.health -= 0.5;
-		if (this.health < 0.5) {
+		this.health -= 1;
+		if (this.health < 1) {
 			Crafty.e('RedShot').at(this.x, this.y);
+			Crafty.audio.play('explosion');
 			this.goBoom();
 		}
 	}
@@ -67,7 +80,7 @@ Crafty.c('BigMeteor', {
 Crafty.c('SmallMeteor', {
 	init: function () {
 		this.requires('Meteor, spr_smallmeteor');
-		this.health = 1;
+		this.health = 2;
 		this.speed = 5;
 	},
 	goBoom: function () {
@@ -139,15 +152,37 @@ Crafty.c('LaserRed', {
 });
 
 Crafty.c('Ship', {
-	health: 5,
+	health: 10,
 	init: function () {
 		var ship = this;
 		this.requires('Actor, Fourway, Collision, spr_ship')
-			.fourway(8);
-		this.attr({ x: Game.width / 2, y: Game.height - 120 });
-		this.bind('KeyDown', function () {
-			Crafty.e('LaserRed').at(ship.x, ship.y);
-			Crafty.e('LaserRed').at(ship.x + 90, ship.y);
-		});
+			.fourway(8)
+			.attr({ x: Game.width / 2, y: Game.height - 120 })
+			.bind('KeyDown', function (e) {
+				if(e.keyCode === 32) {
+					Crafty.audio.play('shoot');
+					Crafty.e('LaserRed').at(ship.x, ship.y);
+					Crafty.e('LaserRed').at(ship.x + 90, ship.y);
+				}
+			})
+			.bind('Moved', function(from) {
+				// Don't allow to move the player out of Screen
+				if(this.x+this.w > Crafty.viewport.width || this.x+this.w < this.w || this.y+this.h < this.h || this.y+this.h > Crafty.viewport.height || this.preparing){
+					this.attr({
+						x:from.x, 
+						y:from.y
+					});
+				}
+			})
+			.onHit('Meteor', function (ent) {
+				var meteor = ent[0].obj;
+				ship.health -= 1;
+				meteor.gotHit();
+				if(ship.health === 0) {
+					ship.destroy();
+					Crafty.e('RedShot').at(ship.x, ship.y);
+					Crafty.audio.play('explosion');
+				}				
+			});
 	}
 });
