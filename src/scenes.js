@@ -16,6 +16,7 @@ Crafty.scene('Game', function () {
 		m.xSpeed = Crafty.math.randomInt(-2, 2);
 	}
 	Crafty.e('Ship');
+	Crafty.e('StatusBar');
     //Play background music and repeat
     Crafty.audio.play("space",-1);
 });

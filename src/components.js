@@ -31,6 +31,33 @@ Crafty.audio.add({
 		"assets/music/through-space.ogg"]
 });
 
+Crafty.c('TextElement', {
+	init: function() {
+		this.requires('Actor, Color, Text')
+			.textFont({size:'50px', type: 'italic', family: 'Arial' })
+			.textColor('#ffffff')
+			.attr({z: 101});
+			
+	}
+});
+
+Crafty.c('StatusBar', {
+	init: function() {
+		this.requires('Actor, Color')
+			.attr({ x: 0, y: Game.height - 30, w: Game.width, h: 30, z: 100})
+			.color('blue');2			
+			
+		var health = Crafty.e('TextElement')
+			.at(50, Game.height - 10)
+			.text('Health: 10')
+			.bind('HealthChanged', function(shipHealth) {
+				health.text('Health: ' + shipHealth);				
+			});
+		
+	}
+	
+});
+
 Crafty.c('Meteor', {
 	speed: 3,
 	health: 5,
@@ -157,7 +184,7 @@ Crafty.c('Ship', {
 		var ship = this;
 		this.requires('Actor, Fourway, Collision, spr_ship')
 			.fourway(8)
-			.attr({ x: Game.width / 2, y: Game.height - 120 })
+			.attr({ x: Game.width / 2, y: Game.height - 120, z: 100 })
 			.bind('KeyDown', function (e) {
 				if(e.keyCode === 32) {
 					Crafty.audio.play('shoot');
@@ -167,7 +194,7 @@ Crafty.c('Ship', {
 			})
 			.bind('Moved', function(from) {
 				// Don't allow to move the player out of Screen
-				if(this.x+this.w > Crafty.viewport.width || this.x+this.w < this.w || this.y+this.h < this.h || this.y+this.h > Crafty.viewport.height || this.preparing){
+				if(this.x+this.w > Crafty.viewport.width || this.x+this.w < this.w || this.y+this.h < this.h || this.y+this.h+30 > Crafty.viewport.height || this.preparing){
 					this.attr({
 						x:from.x, 
 						y:from.y
@@ -177,6 +204,7 @@ Crafty.c('Ship', {
 			.onHit('Meteor', function (ent) {
 				var meteor = ent[0].obj;
 				ship.health -= 1;
+				Crafty.trigger('HealthChanged', ship.health);
 				meteor.gotHit();
 				if(ship.health === 0) {
 					ship.destroy();
