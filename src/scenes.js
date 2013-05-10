@@ -34,8 +34,8 @@ Crafty.scene('Loading', function () {
 });
 
 Crafty.scene('Game', function () {
-	Game.lives = 3;
-	Game.level = 0;
+	function makeLevel(level) {
+	}
 	for (i = 0; i < 5; i++) {
 		Crafty.e('BigStar');
 	}
@@ -54,13 +54,15 @@ Crafty.scene('Game', function () {
 		m.xSpeed = Crafty.math.randomInt(-2, 2);
 		m.rSpeed = Crafty.math.randomInt(-5, 5);
 	}
+	Crafty.audio.play("space",-1); //Play background music and repeat
 	Crafty.e('Ship');
 	Crafty.e('StatusBar');	
-	Crafty.audio.play("space",-1); //Play background music and repeat
 });
 
 Crafty.scene('GameOver', function () {
 	Crafty.e('TextElement').at(40, 120).text('Oh nos! Game over!\nPress key to try again').bind('KeyDown', function () {
+		Game.lives = 3;
+		Game.level = 0;
 		Crafty.scene('Game');
 	});
 });

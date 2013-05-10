@@ -92,6 +92,7 @@ Crafty.c('Meteor', {
 	gotHit: function () {
 		this.health -= 1;
 		if (this.health < 1) {
+			Crafty.trigger('MeteorDestoyed');
 			Crafty.e('RedShot').at(this.x, this.y);
 			Crafty.audio.play('explosion');
 			this.goBoom();
