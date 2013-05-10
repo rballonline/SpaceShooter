@@ -9,11 +9,13 @@ Crafty.scene('Game', function () {
 		var m = Crafty.e('BigMeteor');
 		m.ySpeed = Crafty.math.randomInt(3, 6);
 		m.xSpeed = Crafty.math.randomInt(-2, 2);
+		m.rSpeed = Crafty.math.randomInt(-5, 5);
 	}
 	for (i = 0; i < 10; i++) {
 		var m = Crafty.e('SmallMeteor');
 		m.ySpeed = Crafty.math.randomInt(3, 6);
 		m.xSpeed = Crafty.math.randomInt(-2, 2);
+		m.rSpeed = Crafty.math.randomInt(-5, 5);
 	}
 	Crafty.e('Ship');
 	Crafty.e('StatusBar');

@@ -9,7 +9,7 @@ Crafty.c('Actor', {
   }
 });
 
-Crafty.load(['assets/player.png', 'assets/Background/starBig.png', 'assets/Background/starSmall.png', 'assets/meteorBig.png', 'assets/meteorSmall.png', 'assets/laserRed.png', 'assets/laserRedShot.png', 'assets/Sounds/laser1.mp3', 'assets/Sounds/laser1.wav', 'assets/Sounds/laser1.ogg', 'assets/sounds/explode1.wav',	'assets/sounds/explode1.mp3', 'assets/sounds/explode1.ogg', "assets/music/through-space.mp3", "assets/music/through-space.ogg"], function () {
+Crafty.load(['assets/player.png', 'assets/Background/starBig.png', 'assets/Background/starSmall.png', 'assets/meteorBig.png', 'assets/meteorSmall.png', 'assets/laserRed.png', 'assets/laserRedShot.png', 'assets/Sounds/laser1.mp3', 'assets/Sounds/laser1.wav', 'assets/Sounds/laser1.ogg', 'assets/sounds/explode1.wav',	'assets/sounds/explode1.mp3', 'assets/sounds/explode1.ogg', 'assets/music/through-space.mp3', 'assets/music/through-space.ogg', 'assets/life.png'], function () {
 	Crafty.sprite(99, 75, 'assets/player.png', { spr_ship: [0, 0] });
 	Crafty.sprite(23, 21, 'assets/Background/starBig.png', { spr_bigstar: [0,0]});
 	Crafty.sprite(11, 'assets/Background/starSmall.png', { spr_smallstar: [0, 0] });
@@ -17,6 +17,7 @@ Crafty.load(['assets/player.png', 'assets/Background/starBig.png', 'assets/Backg
 	Crafty.sprite(44, 42, 'assets/meteorSmall.png', { spr_smallmeteor: [0, 0] });
 	Crafty.sprite(9, 33, 'assets/laserRed.png', { spr_laserred: [0, 0] });
 	Crafty.sprite(56, 54, 'assets/laserRedShot.png', { spr_redshot: [0, 0] });
+	Crafty.sprite(35, 27, 'assets/life.png', { spr_life: [0,0]});
 });
 
 Crafty.audio.add({
@@ -31,10 +32,35 @@ Crafty.audio.add({
 		"assets/music/through-space.ogg"]
 });
 
+Crafty.c('Life', {
+	init: function() {
+		this.requires('Actor, spr_life');
+	}
+});
+
+Crafty.c('Lives', {
+	lives: 3,
+	init: function() {
+		this.renderLives();
+	},
+	renderLives: function() {
+		for(i=0; i<this.lives;i++) {
+			Crafty.e('Life')
+				.attr({ z: 101 })
+				.at(Game.width - 120 +(i*40), Game.height - 30);
+		}
+	},
+	remove: function() {
+		this.lives--;
+		Crafty('Life').destroy();
+		this.renderLives();
+	}
+});
+
 Crafty.c('TextElement', {
 	init: function() {
 		this.requires('Actor, Color, Text')
-			.textFont({size:'50px', type: 'italic', family: 'Arial' })
+			.textFont({size:'40px', type: 'italic', family: 'Consolas' })
 			.textColor('#ffffff')
 			.attr({z: 101});
 			
@@ -42,18 +68,34 @@ Crafty.c('TextElement', {
 });
 
 Crafty.c('StatusBar', {
+	score: 0,
 	init: function() {
+		var statusBar = this;
 		this.requires('Actor, Color')
 			.attr({ x: 0, y: Game.height - 30, w: Game.width, h: 30, z: 100})
 			.color('blue');2			
 			
 		var health = Crafty.e('TextElement')
-			.at(50, Game.height - 10)
+			.at(20, Game.height - 5)
 			.text('Health: 10')
 			.bind('HealthChanged', function(shipHealth) {
 				health.text('Health: ' + shipHealth);				
 			});
+			
+		var score = Crafty.e('TextElement')
+			.at(280, Game.height - 5)
+			.text('Score: ' + this.score)
+			.bind('ScoreChanged', function(scoreDelta) {
+				statusBar.score += scoreDelta;
+				score.text('Score: ' + statusBar.score);				
+			});
 		
+		var lives = Crafty.e('Lives')
+			.bind('HealthChanged', function(shipHealth) {
+				if(shipHealth === 0) {
+					lives.remove();
+				}
+			});
 	}
 	
 });
@@ -63,13 +105,14 @@ Crafty.c('Meteor', {
 	health: 5,
 	xSpeed: 0,
 	ySpeed: 0,
+	rSpeed: 0,
 	init: function() {
 		rotation = Crafty.math.randomInt(0, 5);
 		this.requires('Actor');
 		this.attr({ x: Crafty.math.randomInt(10, Game.width - 10), y: Crafty.math.randomInt(-50, -800) });
 		this.bind('EnterFrame', function () {
 			this.origin('center');
-			this.rotation += rotation;
+			this.rotation += this.rSpeed;
 			this.y += this.ySpeed;
 			this.x += this.xSpeed;
 			if (this.y > Game.height) {
@@ -99,7 +142,9 @@ Crafty.c('BigMeteor', {
 			var m = Crafty.e('SmallMeteor').at(this.x, this.y);
 			m.ySpeed = Crafty.math.randomInt(3, 6);
 			m.xSpeed = Crafty.math.randomInt(-2, 2);
+			m.rSpeed = Crafty.math.randomInt(-5, 5);
 		}
+		Crafty.trigger('ScoreChanged', 5);
 		this.destroy();
 	}
 });
@@ -112,6 +157,7 @@ Crafty.c('SmallMeteor', {
 	},
 	goBoom: function () {
 		this.destroy();
+		Crafty.trigger('ScoreChanged', 2);
 	}
 });
 
@@ -206,6 +252,7 @@ Crafty.c('Ship', {
 				ship.health -= 1;
 				Crafty.trigger('HealthChanged', ship.health);
 				meteor.gotHit();
+				Crafty.trigger('ScoreChanged', -1);
 				if(ship.health === 0) {
 					ship.destroy();
 					Crafty.e('RedShot').at(ship.x, ship.y);
