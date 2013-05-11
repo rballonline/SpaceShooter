@@ -31,12 +31,26 @@ Crafty.c('Lives', {
 	}
 });
 
-Crafty.c('TextElement', {
+Crafty.c('StatusBarText', {
 	init: function () {
 		this.requires('Actor, Color, Text')
 			.textFont({ size: '40px', type: 'italic', family: 'Consolas' })
 			.textColor('#ffffff')
 			.attr({ z: 101 });
+	}
+});
+
+Crafty.c('DisplayText', {
+	init: function() {
+		this.requires('2D, DOM, Text, Tween')			
+			.textFont({ size: '30px', type: 'normal', family: 'Consolas' })
+			.textColor('#ffffff')
+			.attr({ w: Game.width, h: 80, z: 101 })
+			.css('text-align: center');		
+	},
+	at: function(y) {
+		this.attr({y: y});
+		return this;
 	}
 });
 
@@ -48,14 +62,14 @@ Crafty.c('StatusBar', {
 			.attr({ x: 0, y: Game.height - 30, w: Game.width, h: 30, z: 100})
 			.color('blue');2			
 			
-		var health = Crafty.e('TextElement')
+		var health = Crafty.e('StatusBarText')
 			.at(20, Game.height - 5)
 			.text('Health: 10')
 			.bind('HealthChanged', function(shipHealth) {
 				health.text('Health: ' + shipHealth);				
 			});
 			
-		var score = Crafty.e('TextElement')
+		var score = Crafty.e('StatusBarText')
 			.at(280, Game.height - 5)
 			.text('Score: ' + this.score)
 			.bind('ScoreChanged', function(scoreDelta) {
@@ -83,7 +97,7 @@ Crafty.c('Meteor', {
 			this.rotation += this.rSpeed;
 			this.y += this.ySpeed;
 			this.x += this.xSpeed;
-			if (this.y > Game.height) {
+			if (this.y > Game.height || this.x < -60 || this.x > Game.width + 60 ) {
 				this.attr({ x: Crafty.math.randomInt(10, Game.width - 10), y: -111 }); // put it back up at the top of the screen
 			}
 		})
@@ -92,7 +106,6 @@ Crafty.c('Meteor', {
 	gotHit: function () {
 		this.health -= 1;
 		if (this.health < 1) {
-			Crafty.trigger('MeteorDestoyed');
 			Crafty.e('RedShot').at(this.x, this.y);
 			Crafty.audio.play('explosion');
 			this.goBoom();
@@ -126,6 +139,7 @@ Crafty.c('SmallMeteor', {
 	goBoom: function () {
 		this.destroy();
 		Crafty.trigger('ScoreChanged', 2);
+		Crafty.trigger('MeteorDestoyed');
 	}
 });
 

@@ -29,40 +29,58 @@ Crafty.scene('Loading', function () {
 				"assets/music/through-space.ogg"]
 		});
 
-		Crafty.scene('Game');
+		Game.newGame();
 	});
 });
 
 Crafty.scene('Game', function () {
-	function makeLevel(level) {
+	function makeLevel() {
+		Game.level++;
+		var level = Game.levels[Game.level];
+		Crafty.e('DisplayText')
+			.at((Game.height/2)-20)
+			.text(level.name)
+			.tween({alpha: 0}, 90)
+			.bind('TweenEnd', function() {
+				this.destroy();
+			});
+			
+		setTimeout(function() {
+			for (i = 0; i < level.big; i++) {
+				var m = Crafty.e('BigMeteor');
+				m.ySpeed = Crafty.math.randomInt(3, 6);
+				m.xSpeed = Crafty.math.randomInt(-2, 2);
+				m.rSpeed = Crafty.math.randomInt(-5, 5);
+			}
+			for (i = 0; i < level.small; i++) {
+				var m = Crafty.e('SmallMeteor');
+				m.ySpeed = Crafty.math.randomInt(3, 6);
+				m.xSpeed = Crafty.math.randomInt(-2, 2);
+				m.rSpeed = Crafty.math.randomInt(-5, 5);
+			}
+		}, 3000);
 	}
-	for (i = 0; i < 5; i++) {
+	
+	for (i = 0; i < 8; i++) {
 		Crafty.e('BigStar');
 	}
-	for (i = 0; i < 15; i++) {
+	for (i = 0; i < 25; i++) {
 		Crafty.e('SmallStar');
 	}
-	for (i = 0; i < 5; i++) {
-		var m = Crafty.e('BigMeteor');
-		m.ySpeed = Crafty.math.randomInt(3, 6);
-		m.xSpeed = Crafty.math.randomInt(-2, 2);
-		m.rSpeed = Crafty.math.randomInt(-5, 5);
-	}
-	for (i = 0; i < 10; i++) {
-		var m = Crafty.e('SmallMeteor');
-		m.ySpeed = Crafty.math.randomInt(3, 6);
-		m.xSpeed = Crafty.math.randomInt(-2, 2);
-		m.rSpeed = Crafty.math.randomInt(-5, 5);
-	}
+	makeLevel();
+	this.bind('MeteorDestoyed', function() {
+		console.log(Crafty('Meteor').length);
+		if(Crafty('Meteor').length === 0) { // Level complete
+			makeLevel();
+		}
+	});
 	Crafty.audio.play("space",-1); //Play background music and repeat
 	Crafty.e('Ship');
 	Crafty.e('StatusBar');	
 });
 
 Crafty.scene('GameOver', function () {
-	Crafty.e('TextElement').at(40, 120).text('Oh nos! Game over!\nPress key to try again').bind('KeyDown', function () {
-		Game.lives = 3;
-		Game.level = 0;
-		Crafty.scene('Game');
+	Crafty.e('DisplayText').at(120).text('Oh nos! Game over!<br />Press key to try again').bind('KeyDown', function () {
+		Game.newGame();
 	});
 });
