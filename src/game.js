@@ -15,7 +15,7 @@ var Game = {
 			music: 'space'
 		},
 		{
-			name: 'big bros trying to steal yer joes',
+			name: 'big dudes, they break apart!',
 			big: 4,
 			small: 0,
 			swirlies: [],
